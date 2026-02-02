@@ -35,7 +35,7 @@ class FinanzguruApi:
         refresh_token: str | None = None,
         expires_at: datetime | None = None,
         token_updater: TokenUpdater | None = None,
-        base_url: str = "https://api.finanzguru.de",
+        base_url: str = "https://api1.finanzguru.de",
         request_timeout: aiohttp.ClientTimeout | None = None,
     ) -> None:
         self._session = session
@@ -52,25 +52,42 @@ class FinanzguruApi:
         return bool(self._access_token and self._refresh_token and self._expires_at)
 
     async def async_login_with_password(self, email: str, password: str) -> FinanzguruTokens:
-        payload = {
-            "grant_type": "password",
-            "username": email,
-            "password": password,
-        }
-        data = await self._async_request("POST", "/oauth/token", json=payload, auth=False)
-        tokens = self._tokens_from_response(data)
-        await self._async_apply_tokens(tokens)
-        return tokens
+        attempts: list[dict[str, Any]] = [
+            {"username": email, "password": password},
+            {"email": email, "password": password},
+            {"grant_type": "password", "username": email, "password": password},
+            {"grant_type": "password", "email": email, "password": password},
+        ]
+
+        last_error: Exception | None = None
+        for payload in attempts:
+            try:
+                data = await self._async_request(
+                    "POST",
+                    "/auth/token",
+                    json=payload,
+                    auth=False,
+                )
+                tokens = self._tokens_from_response(data)
+                if not tokens.refresh_token:
+                    raise FinanzguruAuthError("Token response incomplete")
+                await self._async_apply_tokens(tokens)
+                return tokens
+            except FinanzguruAuthError as err:
+                last_error = err
+                break
+            except FinanzguruError as err:
+                last_error = err
+                continue
+
+        raise last_error or FinanzguruError("Login failed")
 
     async def async_refresh_access_token(self) -> FinanzguruTokens:
         if not self._refresh_token:
             raise FinanzguruAuthError("Missing refresh token")
 
-        payload = {
-            "grant_type": "refresh_token",
-            "refresh_token": self._refresh_token,
-        }
-        data = await self._async_request("POST", "/oauth/token", json=payload, auth=False)
+        payload = {"grant_type": "refresh_token", "refresh_token": self._refresh_token}
+        data = await self._async_request("POST", "/auth/token", json=payload, auth=False)
         tokens = self._tokens_from_response(data)
         if not tokens.refresh_token:
             tokens = FinanzguruTokens(
@@ -198,7 +215,12 @@ class FinanzguruApi:
                 if resp.status in (401, 403):
                     raise FinanzguruAuthError(f"Auth failed ({resp.status})")
                 resp.raise_for_status()
-                data = await resp.json(content_type=None)
+                try:
+                    data = await resp.json(content_type=None)
+                except Exception:  # noqa: BLE001
+                    text = await resp.text()
+                    return {"data": text}
+
                 if isinstance(data, dict):
                     return data
                 return {"data": data}

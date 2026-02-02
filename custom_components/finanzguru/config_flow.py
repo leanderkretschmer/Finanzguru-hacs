@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -7,6 +8,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import FinanzguruApi, FinanzguruAuthError, FinanzguruError
 from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -27,9 +30,11 @@ class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     raise FinanzguruAuthError("Missing refresh token")
             except FinanzguruAuthError:
                 errors["base"] = "invalid_auth"
-            except FinanzguruError:
+            except FinanzguruError as err:
+                _LOGGER.error("Finanzguru login failed: %s", err)
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
+                _LOGGER.exception("Unexpected error during Finanzguru login")
                 errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(email.lower())
@@ -73,9 +78,11 @@ class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     raise FinanzguruAuthError("Missing refresh token")
             except FinanzguruAuthError:
                 errors["base"] = "invalid_auth"
-            except FinanzguruError:
+            except FinanzguruError as err:
+                _LOGGER.error("Finanzguru reauth failed: %s", err)
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
+                _LOGGER.exception("Unexpected error during Finanzguru reauth")
                 errors["base"] = "unknown"
             else:
                 self.hass.config_entries.async_update_entry(
