@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 import logging
 import voluptuous as vol
 
@@ -7,7 +8,13 @@ from homeassistant import config_entries
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import FinanzguruApi, FinanzguruAuthError, FinanzguruError
-from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
+from .const import (
+    CONF_ACCESS_TOKEN,
+    CONF_EMAIL,
+    CONF_REFRESH_TOKEN,
+    CONF_TOKEN_EXPIRES_AT,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,14 +27,21 @@ class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             email: str = user_input[CONF_EMAIL].strip()
-            password: str = user_input[CONF_PASSWORD]
+            refresh_token: str = user_input[CONF_REFRESH_TOKEN].strip()
+            access_token: str | None = user_input.get(CONF_ACCESS_TOKEN)
+            if access_token is not None:
+                access_token = access_token.strip() or None
 
             session = async_get_clientsession(self.hass)
-            api = FinanzguruApi(session)
+            api = FinanzguruApi(
+                session,
+                access_token=access_token,
+                refresh_token=refresh_token,
+                expires_at=datetime.now(timezone.utc) - timedelta(seconds=1),
+            )
             try:
-                tokens = await api.async_login_with_password(email, password)
-                if not tokens.refresh_token:
-                    raise FinanzguruAuthError("Missing refresh token")
+                tokens = await api.async_refresh_access_token()
+                await api.async_get_bank_accounts()
             except FinanzguruAuthError:
                 errors["base"] = "invalid_auth"
             except FinanzguruError as err:
@@ -43,16 +57,17 @@ class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     title=email,
                     data={
                         CONF_EMAIL: email,
-                        "access_token": tokens.access_token,
-                        "refresh_token": tokens.refresh_token,
-                        "token_expires_at": tokens.expires_at.timestamp(),
+                        CONF_ACCESS_TOKEN: tokens.access_token,
+                        CONF_REFRESH_TOKEN: tokens.refresh_token,
+                        CONF_TOKEN_EXPIRES_AT: tokens.expires_at.timestamp(),
                     },
                 )
 
         schema = vol.Schema(
             {
                 vol.Required(CONF_EMAIL): str,
-                vol.Required(CONF_PASSWORD): str,
+                vol.Required(CONF_REFRESH_TOKEN): str,
+                vol.Optional(CONF_ACCESS_TOKEN): str,
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
@@ -68,14 +83,21 @@ class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None and getattr(self, "_reauth_entry", None):
             email: str = user_input[CONF_EMAIL].strip()
-            password: str = user_input[CONF_PASSWORD]
+            refresh_token: str = user_input[CONF_REFRESH_TOKEN].strip()
+            access_token: str | None = user_input.get(CONF_ACCESS_TOKEN)
+            if access_token is not None:
+                access_token = access_token.strip() or None
 
             session = async_get_clientsession(self.hass)
-            api = FinanzguruApi(session)
+            api = FinanzguruApi(
+                session,
+                access_token=access_token,
+                refresh_token=refresh_token,
+                expires_at=datetime.now(timezone.utc) - timedelta(seconds=1),
+            )
             try:
-                tokens = await api.async_login_with_password(email, password)
-                if not tokens.refresh_token:
-                    raise FinanzguruAuthError("Missing refresh token")
+                tokens = await api.async_refresh_access_token()
+                await api.async_get_bank_accounts()
             except FinanzguruAuthError:
                 errors["base"] = "invalid_auth"
             except FinanzguruError as err:
@@ -90,9 +112,9 @@ class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         **self._reauth_entry.data,
                         CONF_EMAIL: email,
-                        "access_token": tokens.access_token,
-                        "refresh_token": tokens.refresh_token,
-                        "token_expires_at": tokens.expires_at.timestamp(),
+                        CONF_ACCESS_TOKEN: tokens.access_token,
+                        CONF_REFRESH_TOKEN: tokens.refresh_token,
+                        CONF_TOKEN_EXPIRES_AT: tokens.expires_at.timestamp(),
                     },
                 )
                 await self.hass.config_entries.async_reload(self._reauth_entry.entry_id)
@@ -101,7 +123,8 @@ class FinanzguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_EMAIL): str,
-                vol.Required(CONF_PASSWORD): str,
+                vol.Required(CONF_REFRESH_TOKEN): str,
+                vol.Optional(CONF_ACCESS_TOKEN): str,
             }
         )
         return self.async_show_form(

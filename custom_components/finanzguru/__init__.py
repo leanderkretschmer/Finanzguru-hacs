@@ -11,7 +11,13 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import FinanzguruApi, FinanzguruAuthError, FinanzguruError, FinanzguruTokens
-from .const import DOMAIN, UPDATE_INTERVAL
+from .const import (
+    CONF_ACCESS_TOKEN,
+    CONF_REFRESH_TOKEN,
+    CONF_TOKEN_EXPIRES_AT,
+    DOMAIN,
+    UPDATE_INTERVAL,
+)
 from .frontend import async_register_frontend
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -20,18 +26,18 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _tokens_from_entry(entry: ConfigEntry) -> tuple[str | None, str | None, datetime | None]:
-    access_token = entry.data.get("access_token")
-    refresh_token = entry.data.get("refresh_token")
-    token_expires_at = entry.data.get("token_expires_at")
+    access_token = entry.data.get(CONF_ACCESS_TOKEN)
+    refresh_token = entry.data.get(CONF_REFRESH_TOKEN)
+    token_expires_at = entry.data.get(CONF_TOKEN_EXPIRES_AT)
 
-    if not isinstance(access_token, str) or not isinstance(refresh_token, str):
-        return None, None, None
+    access: str | None = access_token if isinstance(access_token, str) else None
+    refresh: str | None = refresh_token if isinstance(refresh_token, str) else None
 
     expires_at: datetime | None = None
     if isinstance(token_expires_at, (int, float)):
         expires_at = datetime.fromtimestamp(float(token_expires_at), tz=timezone.utc)
 
-    return access_token, refresh_token, expires_at
+    return access, refresh, expires_at
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -44,9 +50,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry,
             data={
                 **entry.data,
-                "access_token": tokens.access_token,
-                "refresh_token": tokens.refresh_token,
-                "token_expires_at": tokens.expires_at.timestamp(),
+                CONF_ACCESS_TOKEN: tokens.access_token,
+                CONF_REFRESH_TOKEN: tokens.refresh_token,
+                CONF_TOKEN_EXPIRES_AT: tokens.expires_at.timestamp(),
             },
         )
 

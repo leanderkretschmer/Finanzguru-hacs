@@ -9,6 +9,9 @@ DOMAIN = "finanzguru"
 
 CONF_EMAIL = "email"
 CONF_PASSWORD = "password"
+CONF_ACCESS_TOKEN = "access_token"
+CONF_REFRESH_TOKEN = "refresh_token"
+CONF_TOKEN_EXPIRES_AT = "token_expires_at"
 
 UPDATE_INTERVAL = timedelta(minutes=30)
 

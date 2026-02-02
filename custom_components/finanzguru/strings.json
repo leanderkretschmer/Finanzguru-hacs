@@ -3,18 +3,20 @@
     "step": {
       "user": {
         "title": "Finanzguru verbinden",
-        "description": "Gib deine Finanzguru-Zugangsdaten ein. Das Passwort wird nur zur Token-Erstellung verwendet und nicht dauerhaft gespeichert.",
+        "description": "Gib deine Finanzguru-Tokens ein. Die Integration nutzt den Refresh-Token, um automatisch gültige Access-Tokens zu holen.",
         "data": {
           "email": "E-Mail",
-          "password": "Passwort"
+          "refresh_token": "Refresh-Token",
+          "access_token": "Access-Token (optional)"
         }
       },
       "reauth_confirm": {
         "title": "Finanzguru erneut authentifizieren",
-        "description": "Die Sitzung ist abgelaufen oder ungültig. Bitte melde dich erneut an.",
+        "description": "Die Sitzung ist abgelaufen oder ungültig. Bitte gib neue Tokens an.",
         "data": {
           "email": "E-Mail",
-          "password": "Passwort"
+          "refresh_token": "Refresh-Token",
+          "access_token": "Access-Token (optional)"
         }
       }
     },
