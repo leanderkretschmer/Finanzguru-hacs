@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "config_flow": true,
   "integration_type": "service",
-  "documentation": "https://example.invalid/finanzguru",
-  "issue_tracker": "https://example.invalid/finanzguru/issues",
+  "documentation": "https://github.com/leanderkretschmer/Finanzguru-hacs",
+  "issue_tracker": "https://github.com/leanderkretschmer/Finanzguru-hacs/issues",
+  "codeowners": ["@leanderkretschmer"],
+  "dependencies": ["frontend", "http"],
   "iot_class": "cloud_polling"
 }

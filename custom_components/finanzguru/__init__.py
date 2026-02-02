@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import FinanzguruApi, FinanzguruAuthError, FinanzguruError, FinanzguruTokens
 from .const import DOMAIN, UPDATE_INTERVAL
+from .frontend import async_register_frontend
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
@@ -36,6 +37,7 @@ def _tokens_from_entry(entry: ConfigEntry) -> tuple[str | None, str | None, date
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     session = async_get_clientsession(hass)
+    await async_register_frontend(hass)
 
     async def _async_update_tokens(tokens: FinanzguruTokens) -> None:
         hass.config_entries.async_update_entry(
