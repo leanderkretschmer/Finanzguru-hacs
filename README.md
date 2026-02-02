@@ -1,6 +1,6 @@
 # Finanzguru (Home Assistant Custom Component)
 
-![Finanzguru Logo](custom_components/finanzguru/logo.svg)
+![Finanzguru Logo](custom_components/finanzguru/logo.png)
 
 Diese Integration verbindet Home Assistant mit Finanzguru und stellt Kennzahlen als Sensoren bereit (z. B. monatliche Ausgaben/Einnahmen, heutige Ausgaben, Verträge, Budgets).
 
