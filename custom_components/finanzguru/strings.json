@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Finanzguru verbinden",
+        "description": "Gib deine Finanzguru-Zugangsdaten ein. Das Passwort wird nur zur Token-Erstellung verwendet und nicht dauerhaft gespeichert.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Finanzguru erneut authentifizieren",
+        "description": "Die Sitzung ist abgelaufen oder ungültig. Bitte melde dich erneut an.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zu Finanzguru fehlgeschlagen.",
+      "invalid_auth": "Ungültige Zugangsdaten.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Dieses Konto ist bereits konfiguriert.",
+      "reauth_successful": "Erneute Authentifizierung erfolgreich."
+    }
+  }
+}

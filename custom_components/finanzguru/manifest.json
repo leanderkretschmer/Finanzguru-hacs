@@ -1,0 +1,10 @@
+{
+  "domain": "finanzguru",
+  "name": "Finanzguru",
+  "version": "1.0.0",
+  "config_flow": true,
+  "integration_type": "service",
+  "documentation": "https://example.invalid/finanzguru",
+  "issue_tracker": "https://example.invalid/finanzguru/issues",
+  "iot_class": "cloud_polling"
+}
